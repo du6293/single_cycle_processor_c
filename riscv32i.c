@@ -44,8 +44,7 @@ Alu_out alu(Alu_in alu_in){
 	else if (alu_in.alu_control == 10) result.alu_result = alu_in.alu_in1 + alu_in.alu_in2;  // lui -> 0 + imm32
 	else 								result.alu_result = alu_in.alu_in1 + alu_in.alu_in2;
 	
-	//result.alu_zero = (result.alu_result == 0) ? 1 : 0;
-	//result.alu_sign = ((int32_t)result.alu_result >>31 ); 
+
 	
 	if ((int32_t) result.alu_result == 0) result.alu_zero = 1;
 	else 								  result.alu_zero = 0;
