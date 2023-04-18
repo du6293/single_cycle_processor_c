@@ -8,7 +8,7 @@
 int main (int argc, char *argv[]) {  // argument cout 
 
 	// get input arguments
-	FILE *f_imem, *f_dmem; // 
+	FILE *f_imem, *f_dmem; 
 	if (argc < 3) {
 		printf("usage: %s imem_data_file dmem_data_file\n", argv[0]);
 		exit(1);
@@ -61,6 +61,7 @@ int main (int argc, char *argv[]) {  // argument cout
 		printf("imem[%03d]: %08X\n", i, imem_data[i]);
 		i++;
 	}
+	
 	/* data memory */
 	i = 0;
 	printf("\n*** Reading %s ***\n", argv[2]);
@@ -74,7 +75,6 @@ int main (int argc, char *argv[]) {  // argument cout
 	fclose(f_imem);
 	fclose(f_dmem);
 	
-
 	// processor model
 	uint32_t pc_curr = 0;
 	uint32_t pc_next =0;	
@@ -102,35 +102,30 @@ int main (int argc, char *argv[]) {  // argument cout
    	
    	uint32_t cc = 2;	// clock count
 	
-	
-	
-	
+
 	while (cc < CLK_NUM) {
 		
 		
-		/*1.instruction fetch*//////////////////////////////////////////////////////////////////////////
+		/*1.instruction fetch*/
 		uint32_t imem_addr = pc_curr >> 2;
 		imem_in.imem_addr = imem_addr;  // 1word
 		imem_out = imem(imem_in, imem_data); //   
 		uint32_t inst = imem_out.inst;   // get 32 bit instruction from instruction memory
 		
 	
-		/* 2.instruction decode *///////////////////////////////////////////////////////////////////////////////
+		/* 2.instruction decode */
 		
 		uint32_t opcode = inst & 0x0000007f; 
 		uint8_t funct3;// = (inst >> 12) & 0x00007;
 		
 		if (opcode == 0x37 || opcode == 0x17 ) funct3 =0;
-		else 									funct3 = (inst >> 12) & 0x00007;
+		else 				funct3 = (inst >> 12) & 0x00007;
 		
 		uint8_t funct7 ;//= (inst >> 25) &0x7f;
 		
 		if (opcode == 0x33 ) funct7 = (inst >> 25) &0x7f;
 		else 				funct7 = 0;
-		
-		
-		
-		
+
 		
 		/* control uint*/
 		
@@ -152,42 +147,36 @@ int main (int argc, char *argv[]) {  // argument cout
 		uint8_t alu_op = 0;         /// what is alu excute's operation
 		uint8_t alu_control = 0;
 
-		if      (opcode == 0x03) 		alu_op = 0;         //load -> add
-		else if (opcode == 0x23) 		alu_op = 0;			//store -> add
-		else if (opcode == 0x33) 		alu_op = 2;			//r-type  
-		else if (opcode == 0x13) 		alu_op = 2;			// i-type
-		else if (opcode == 0x63) 		alu_op = 1;          // sb   -> sub
-		else if (opcode == 0x37) 		alu_op = 3;			// lui
-		else 	                 		alu_op = 0;         // auipc, jal, jalr
+		if      (opcode == 0x03) 		alu_op = 0;         	// load -> add
+		else if (opcode == 0x23) 		alu_op = 0;		// store -> add
+		else if (opcode == 0x33) 		alu_op = 2;		// r-type  
+		else if (opcode == 0x13) 		alu_op = 2;		// i-type
+		else if (opcode == 0x63) 		alu_op = 1;          	// sb -> sub
+		else if (opcode == 0x37) 		alu_op = 3;		// lui
+		else 	                 		alu_op = 0;         	// auipc, jal, jalr
 		
-		
-		
-		
-		
-		
-		
-		
-		if      (alu_op == 0) 		alu_control = 2;  	 //load, store   
+		/* alu control */
+		if      (alu_op == 0) 		alu_control = 2;  	 // load, store   
 		else if (alu_op == 1) 		alu_control = 7;	 // sb-type 
-		else if (alu_op == 3) 		alu_control = 10;    // lui
-		else if (alu_op == 2) {						 // i-type, r-type
+		else if (alu_op == 3) 		alu_control = 10;    	 // lui
+		else if (alu_op == 2) {					 // i-type, r-type
 			
-			if (funct3 == 0x01) 						alu_control = 4;  //sll,sllli
-			else if(funct3 == 0x05 && funct7 == 0x0) 	alu_control = 5 ; //srl,srli
-			else if(funct3 == 0x05 && funct7 == 0x20) 	alu_control = 6 ;  // sra, srai signed right shift
+			if (funct3 == 0x01) 				alu_control = 4 ; // sll,sllli
+			else if(funct3 == 0x05 && funct7 == 0x0) 	alu_control = 5 ; // srl,srli
+			else if(funct3 == 0x05 && funct7 == 0x20) 	alu_control = 6 ; // sra, srai signed right shift
 			else if(funct3 == 0x00) {
-				if(funct7 == 0x20) 					alu_control = 7 ; //sub
-				else 								alu_control = 2 ; //add, addi
+				if(funct7 == 0x20) 			alu_control = 7 ; // sub
+				else 					alu_control = 2 ; // add, addi
 			}
-			else if (funct3 == 0x04) 		alu_control = 3; //xor,xori
-			else if (funct3 == 0x06) 		alu_control = 1; //or,ori
-			else if (funct3 == 0x07)		alu_control = 0; //and,andi
-			else if (funct3 == 0x02) 		alu_control = 8; //slt,slti
-			else if (funct3 == 0x03)		alu_control = 9; //sltu,sltiu
+			else if (funct3 == 0x04) 		alu_control = 3 ; // xor,xori
+			else if (funct3 == 0x06) 		alu_control = 1 ; // or,ori
+			else if (funct3 == 0x07)		alu_control = 0 ; // and,andi
+			else if (funct3 == 0x02) 		alu_control = 8 ; // slt,slti
+			else if (funct3 == 0x03)		alu_control = 9 ; // sltu,sltiu
 		}
-		
-	
+
 		/*Immediate generator*/
+		
 		uint32_t imm = 0; // imm12 or imm20
 		if (opcode == 0x13){                /////// i-type 
 		    imm = (inst >> 20) & 0xfff;  // inst[31:20]->imm[11:0] 
@@ -227,8 +216,7 @@ int main (int argc, char *argv[]) {  // argument cout
 		else imm = 0;
 		
 		
-		
-		/*  extension*/
+		/* immediate extension*/
 		
 		uint32_t imm32 = 0;
 		
@@ -271,16 +259,17 @@ int main (int argc, char *argv[]) {  // argument cout
 
 
 		/* instruction decode */
+		
 		uint8_t rs1=0;//= (opcode == (0x03|0x23|0x33|0x13|0x63|0x67)) ?( (inst >> 15) & 0x1f) : 0 ;
 		uint8_t rs2=0 ;//= (opcode == (0x23|0x33|0x63)) ? ((inst >> 20) & 0x0001f) : 0 ;
 		uint8_t rd=0 ;//= (opcode == (0x03|0x33|0x13|0x37|0x17|0x6f|0x67)) ? ((inst >>7) & 0x000001f) : 0;
 		
 		if (opcode == 0x23||opcode == 0x33||opcode == 0x13||opcode ==0x63||opcode == 0x67)		rs1 = ((inst >> 15) & 0x1f); // load, store, r-type, i-type, sb-type, jalr
-		else if (opcode == 0x03)																rs1 = ((inst >> 15) & 0x1f);
-		else 																									rs1 =0;
+		else if (opcode == 0x03)									rs1 = ((inst >> 15) & 0x1f);
+		else 												rs1 =0;
 		
 		if (opcode == 0x23||opcode ==0x33||opcode ==0x63)						rs2 = ((inst >> 20) & 0x0001f); // store, r-type, sb-type
-		else																	rs2 = 0;
+		else												rs2 = 0;
 		
 		if (opcode == 0x03||opcode == 0x33|| opcode == 0x13|| opcode ==0x37||opcode == 0x17||opcode == 0x6f|| opcode == 0x67)	rd = ((inst >>7) & 0x000001f); // load, r-type, i-type, lui,auipc,jal,jalr
 		else																												rd = 0; 
@@ -300,12 +289,12 @@ int main (int argc, char *argv[]) {  // argument cout
 		uint32_t alu_result = 0;
 		
 		if (opcode == 0x03 || opcode == 0x23 ||opcode == 0x33 ||opcode == 0x13||opcode == 0x63||opcode == 0x67 ) alu_in1 = reg_out.rs1_dout; // load, store, r-type, i-type, sb-type, jalr
-		else if (opcode == 0x17 || opcode == 0x6f) 																 alu_in1 = pc_curr;  // auipc, jal
-		else if (opcode == 0x37) 																				 alu_in1 = 0; // for lui
+		else if (opcode == 0x17 || opcode == 0x6f) 								 alu_in1 = pc_curr;  // auipc, jal
+		else if (opcode == 0x37) 										 alu_in1 = 0; // for lui
 		
-		if (opcode == 0x3 ||opcode ==0x23 || opcode ==0x13 || opcode ==0x67  ||opcode == 0x37) 					alu_in2 = imm32; // load, store, i-type, jalr, lui
-		else if (opcode == 0x33 || opcode == 0x63) 																alu_in2 = reg_out.rs2_dout;  // r-type, sb-type
-		else if (opcode == 0x17|| opcode == 0x6f)  																alu_in2 = (imm32<<1); // for auipc
+		if (opcode == 0x3 ||opcode ==0x23 || opcode ==0x13 || opcode ==0x67  ||opcode == 0x37) 			 alu_in2 = imm32; // load, store, i-type, jalr, lui
+		else if (opcode == 0x33 || opcode == 0x63) 								 alu_in2 = reg_out.rs2_dout;  // r-type, sb-type
+		else if (opcode == 0x17|| opcode == 0x6f)  								 alu_in2 = (imm32<<1); // for auipc
 		
 		alu_in.alu_in1 = alu_in1;
 		alu_in.alu_in2 = alu_in2;
@@ -313,8 +302,7 @@ int main (int argc, char *argv[]) {  // argument cout
 		alu_out = alu(alu_in);  
 		alu_result = alu_out.alu_result;
 		
-		
-		 
+
 		uint8_t pc_next_sel;
 		uint32_t pc_next_plus4 ;
 		uint32_t pc_next_branch ;
@@ -324,13 +312,13 @@ int main (int argc, char *argv[]) {  // argument cout
 		
 		
 		 /* branch */
-		if 		( branch[0] == 1 && alu_out.alu_zero == 1) 							pc_next_sel = 1; // beq
+		if 		( branch[0] == 1 && alu_out.alu_zero == 1) 						pc_next_sel = 1; // beq
 		else if ( branch[1] == 1 && alu_out.alu_zero == 0) 							pc_next_sel = 1; //bne
 		else if ( branch[2] == 1 && alu_out.alu_sign == 1 && alu_out.alu_zero == 0) pc_next_sel = 1;    // blt
 		else if ( branch[3] == 1 && alu_out.alu_sign == 0) 							pc_next_sel = 1;   // bge
 		else if ( branch[4] == 1 && alu_out.alu_zero == 0 && alu_out.alu_sign == 1) pc_next_sel = 1;   // bltu
 		else if ( branch[5] == 1 && alu_out.alu_sign == 0)						 	pc_next_sel = 1;   // bgeu
-		else if (opcode ==0x6f || opcode == 0x67 )								 	pc_next_sel = 1; // jal, jarl
+		else if (opcode ==0x6f || opcode == 0x67 )								pc_next_sel = 1; // jal, jarl
 		
 		else if (opcode == 0x3 || opcode == 0x23 || opcode == 0x33 || opcode == 0x13|| opcode == 0x37 || opcode == 0x17)	pc_next_sel = 0;  /// etc don't jump
 		
@@ -353,8 +341,6 @@ int main (int argc, char *argv[]) {  // argument cout
 		
 		pc_curr = pc_next;   
 		
-		
-
 		/*4.memory */
 
 		dmem_in.dmem_addr = alu_out.alu_result >> 2 ;  // 1 word
@@ -370,11 +356,8 @@ int main (int argc, char *argv[]) {  // argument cout
 		dmem_in.mem_read = mem_read;
 		dmem_out = dmem(dmem_in, dmem_data);  //to transfer register
 		
-		
-		
-		
+
 		/*  5.write-back */
-		
 		
 		if(mem_to_reg == 1) {
 			if (opcode == 0x03 && funct3 == 0x00) {                                        // lb 8bit
@@ -394,14 +377,14 @@ int main (int argc, char *argv[]) {  // argument cout
 			else if (opcode == 0x03 && funct3 == 0x05) reg_in.rd_din = (dmem_out.dmem_dout & 0x0000ffff);     // lhu
         }
         else {
-			if 		(opcode == 0x33)					reg_in.rd_din = alu_out.alu_result;  // r-type
+			if 		(opcode == 0x33)				reg_in.rd_din = alu_out.alu_result;  // r-type
 			else if (opcode == 0x13) 					reg_in.rd_din = alu_out.alu_result;  // i-type
 			else if (opcode == 0x63) 					reg_in.rd_din = pc_next_plus4; // sb-type
 			else if (opcode == 0x6f) 					reg_in.rd_din = pc_next_plus4;  // jal
 			else if (opcode == 0x67) 					reg_in.rd_din = pc_next_plus4;	//jalr
 			else if (opcode == 0x37)  					reg_in.rd_din = alu_out.alu_result;     //lui
 			else if (opcode == 0x17) 					reg_in.rd_din = alu_out.alu_result;  // auipc
-			else										reg_in.rd_din = alu_out.alu_result;
+			else								reg_in.rd_din = alu_out.alu_result;
 	}
 		reg_in.reg_write = reg_write;
 		reg_out = regfile(reg_in, reg_data);   // write back to register
